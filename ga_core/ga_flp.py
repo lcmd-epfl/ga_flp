@@ -9,16 +9,11 @@ from rdkit import Chem
 
 from .angle_measure import calculate_angle
 from .ga_flp_fs import (
-    GS_FLP,
-    append_H2,
     calc_paha,
     chem_fit,
-    cleanup_mol,
-    del_substrate,
     gen_relaxed_FLP_H2_xtb,
     get_BN_dist,
     get_frustration,
-    get_H2_pos,
     sa_score,
     get_BN_index
 )

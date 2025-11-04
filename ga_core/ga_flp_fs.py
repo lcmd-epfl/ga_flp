@@ -28,7 +28,6 @@ from rdkit.Chem import (
     Get3DDistanceMatrix,
     MolFromSmiles,
     rdDistGeom,
-    rdmolops,
 )
 from scipy.spatial import distance
 from skspatial.objects import Plane, Points
