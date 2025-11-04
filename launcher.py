@@ -66,16 +66,24 @@ logger.addHandler(ch)
 # Read the excel/csv file with the SMILES strings.
 def read_database(filename: str) -> pd.DataFrame:
     """
-    Reads a database from an Excel file into a pandas DataFrame.
+    Reads a database from an Excel or CSV file into a pandas DataFrame.
 
     Args:
-        filename: The path to the Excel file.
+        filename: The path to the Excel or CSV file.
 
     Returns:
-        A pandas DataFrame containing the data from the Excel file, with
+        A pandas DataFrame containing the data from the file, with
         any rows containing NaN values dropped.
+
+    Raises:
+        ValueError: If the file format is not supported.
     """
-    database_df = pd.read_excel(filename)
+    if filename.endswith(('.xls', '.xlsx')):
+        database_df = pd.read_excel(filename)
+    elif filename.endswith('.csv'):
+        database_df = pd.read_csv(filename)
+    else:
+        raise ValueError("Unsupported file format. Only .xls, .xlsx, and .csv are supported.")
     database_df.dropna(inplace=True)
     return database_df
 
