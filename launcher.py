@@ -4,6 +4,8 @@ import sys
 import shutil
 import logging
 from pathlib import Path
+import argparse
+import json
 
 import numpy as np
 import pandas as pd
@@ -17,13 +19,6 @@ from ga_core.ga_flp import chromosome_to_smiles, overall_fitness_function
 
 # For multiobjective optimization we use chimera to scalarize
 chimera = Chimera(tolerances=[0.25, 0.1, 0.25], goals=["max", "max", "min"])
-
-# --- Constants for GA parameters ---
-N_GENES = 8
-POP_SIZE = 50
-MUTATION_RATE = 0.25
-N_CROSSOVER_POINTS = 1
-NUM_CYCLES = 10 # Number of GA cycles to run
 
 # --- Logging Setup ---
 class ColoredFormatter(logging.Formatter):
@@ -124,7 +119,24 @@ def main():
     Main function to run the genetic algorithm for optimizing SMILES strings.
     It sets up the GA solver, runs the optimization cycles, and saves the results.
     """
-    alphabet_list = setup_ga_parameters(sys.argv[1])
+    parser = argparse.ArgumentParser(description="Run Genetic Algorithm for FLP optimization.")
+    parser.add_argument("--config", type=str, default="config/config.json", help="Path to the configuration file.")
+    args = parser.parse_args()
+
+    # Load GA parameters from config file
+    with open(args.config, 'r') as f:
+        config = json.load(f)
+
+    ga_params = config['GA_PARAMETERS']
+    N_GENES = ga_params['N_GENES']
+    POP_SIZE = ga_params['POP_SIZE']
+    MUTATION_RATE = ga_params['MUTATION_RATE']
+    N_CROSSOVER_POINTS = ga_params['N_CROSSOVER_POINTS']
+    NUM_CYCLES = ga_params['NUM_CYCLES']
+    RANDOM_SEED = ga_params['RANDOM_SEED']
+    DATA_FILE = ga_params['DATA_FILE']
+
+    alphabet_list = setup_ga_parameters(DATA_FILE)
     # Instantiate callable functions once
     chromosome_to_smiles_callable = chromosome_to_smiles
     fitness_function_callable = overall_fitness_function
@@ -151,9 +163,9 @@ def main():
         to_stdout=True,
         show_stats=True,
         plot_results=True,
+        random_state=RANDOM_SEED,
         # logger_file= "ga_flp.log"
     )
-    # random_state=42,
 
     for i in range(NUM_CYCLES):
         logger.info(f"\n--- CYCLE {i} ---")

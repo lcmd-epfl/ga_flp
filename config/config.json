@@ -1,0 +1,11 @@
+{
+    "GA_PARAMETERS": {
+        "N_GENES": 8,
+        "POP_SIZE": 50,
+        "MUTATION_RATE": 0.25,
+        "N_CROSSOVER_POINTS": 1,
+        "NUM_CYCLES": 10,
+        "RANDOM_SEED": 42,
+        "DATA_FILE": "data/database_HC_bbr.csv"
+    }
+}
