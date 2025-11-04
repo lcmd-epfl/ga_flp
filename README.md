@@ -26,11 +26,38 @@ This project implements a Genetic Algorithm (GA) to optimize Frustrated Lewis Pa
     
 ## Usage
 
-To run the genetic algorithm, execute the `launcher.py` script with the path to your database Excel file:
+To run the genetic algorithm, execute the `launcher.py` script. GA parameters, random seed, and the data file path are now configured via a JSON file.
 
 ```bash
-python launcher.py [data]
+python launcher.py --config config/config.json
 ```
+
+### Configuration File (`config/config.json`)
+
+The `config/config.json` file contains all the configurable parameters for the Genetic Algorithm run. An example structure is shown below:
+
+```json
+{
+    "GA_PARAMETERS": {
+        "N_GENES": 8,
+        "POP_SIZE": 50,
+        "MUTATION_RATE": 0.25,
+        "N_CROSSOVER_POINTS": 1,
+        "NUM_CYCLES": 10,
+        "RANDOM_SEED": 42,
+        "DATA_FILE": "data/database_HC_bbr.csv"
+    }
+}
+```
+
+**Parameters:**
+-   `N_GENES`: Number of genes in each chromosome.
+-   `POP_SIZE`: Size of the population for the genetic algorithm.
+-   `MUTATION_RATE`: Probability of mutation for each gene.
+-   `N_CROSSOVER_POINTS`: Number of crossover points during genetic recombination.
+-   `NUM_CYCLES`: Number of genetic algorithm cycles to run.
+-   `RANDOM_SEED`: Seed for the random number generator to ensure reproducibility.
+-   `DATA_FILE`: Path to the database file (CSV or Excel) containing molecular data.
 
 The script will perform a series of GA cycles, optimizing the FLP structures.
 
