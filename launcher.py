@@ -2,6 +2,7 @@
 import os
 import sys
 import shutil
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,44 @@ POP_SIZE = 50
 MUTATION_RATE = 0.25
 N_CROSSOVER_POINTS = 1
 NUM_CYCLES = 10 # Number of GA cycles to run
+
+# --- Logging Setup ---
+class ColoredFormatter(logging.Formatter):
+    """A custom formatter that adds color to log messages."""
+    
+    # ANSI escape codes for colors
+    GREY = "\x1b[38;20m"
+    YELLOW = "\x1b[33;20m"
+    RED = "\x1b[31;20m"
+    BOLD_RED = "\x1b[31;1m"
+    GREEN = "\x1b[32;20m"
+    RESET = "\x1b[0m"
+
+    FORMATS = {
+        logging.DEBUG: GREY + "%(name)s - %(levelname)s - %(message)s" + RESET,
+        logging.INFO: GREEN + "%(message)s" + RESET,
+        logging.WARNING: YELLOW + "%(name)s - %(levelname)s - %(message)s" + RESET,
+        logging.ERROR: RED + "%(name)s - %(levelname)s - %(message)s" + RESET,
+        logging.CRITICAL: BOLD_RED + "%(name)s - %(levelname)s - %(message)s" + RESET
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create console handler and set formatter
+ch = logging.StreamHandler()
+if os.isatty(sys.stdout.fileno()): # Apply color only if output is a TTY
+    ch.setFormatter(ColoredFormatter())
+else:
+    ch.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+
+logger.addHandler(ch)
 
 # Read the excel/csv file with the SMILES strings.
 def read_database(filename: str) -> pd.DataFrame:
@@ -108,17 +147,8 @@ def main():
     )
     # random_state=42,
 
-    # Perform the runs untill convergence[mean_fitness = 0.9]
-    #    mean_fitness = 0; maximum_fitness = 0; n = 0
-    #   while mean_fitness < 0.925:
-    #      solver.solve(2)  # Do some iterations.
-    #     mean_fitness = solver.mean_fitness_[n]
-    #    maximum_fitness = solver.max_fitness_[n]
-    #   print(f"Mean fitness of cycle number {n}: {mean_fitness} ")
-    #  n+=1
-    # print("Total generations: ",n)
     for i in range(NUM_CYCLES):
-        print(f"\n--- CYCLE {i} ---")
+        logger.info(f"\n--- CYCLE {i} ---")
         solver.solve(1)
         
         # Log details for the current GA turn
@@ -130,11 +160,11 @@ def main():
         best_chromosome = solver.population_[best_idx]
         best_smiles = chromosome_to_smiles_callable(best_chromosome)
 
-        print(f"Current fitness values: {solver.fitness_}")
-        print(f"Max fitness in this cycle: {current_max_fitness}")
-        print(f"Mean fitness in this cycle: {current_mean_fitness}")
-        print(f"Best individual (SMILES): {best_smiles}")
-        print(f"Best individual (chromosome): {best_chromosome}")
+        logger.info(f"Current fitness values: {solver.fitness_}")
+        logger.info(f"Max fitness in this cycle: {current_max_fitness}")
+        logger.info(f"Mean fitness in this cycle: {current_mean_fitness}")
+        logger.info(f"Best individual (SMILES): {best_smiles}")
+        logger.info(f"Best individual (chromosome): {[str(x) for x in best_chromosome]}")
 
         solver.write_population()
         for j, k, chromosome in zip(
@@ -142,7 +172,7 @@ def main():
         ):
             smiles = chromosome_to_smiles_callable(chromosome)
             with open(f"fitness_{i}.txt", "a") as f:
-                print(f"{smiles},{j},{k[0]},{k[1]},{k[2]}", file=f)
+                f.write(f"{smiles},{j},{k[0]},{k[1]},{k[2]}\n")
 
         # Create directory and move chromosome files
         output_dir = Path(f"gen{i}")
@@ -154,7 +184,6 @@ def main():
         np.savetxt(f"max_fitness_{i}.txt", solver.max_fitness_)
         np.savetxt(f"p_fitness_{i}.txt", solver.printable_fitness)
 
-        # print(smiles)
     np.savetxt("mean_fitness.txt", solver.mean_fitness_)
     np.savetxt("max_fitness.txt", solver.max_fitness_)
     np.savetxt("p_fitness.txt", solver.printable_fitness)
@@ -168,10 +197,9 @@ def main():
                     outfile.write(infile.read())
                 filepath.unlink() # Remove individual fitness file after concatenation
 
-    print(f"Total runtime: {solver.runtime_} second")
-
-    print("GA run terminated normally!")
-    print(
+    logger.info(f"Total runtime: {solver.runtime_} second")
+    logger.info("GA run terminated normally!")
+    logger.info(
         "Memory used: {} MB.".format(
             psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
         )

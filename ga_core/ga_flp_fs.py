@@ -20,7 +20,7 @@ import timeit
 from subprocess import PIPE, run
 
 import numpy as np
-from frustration_c import FrustrationPredictor
+from .frustration_c import FrustrationPredictor
 from navicatGA.chemistry_smiles import get_structure_ff
 from rdkit import Chem
 from rdkit.Chem import (

@@ -32,7 +32,12 @@ This project implements a Genetic Algorithm (GA) to optimize Frustrated Lewis Pa
     ```bash
     pip install -r requirements.txt
     ```
-    For `chimera` and `navicatGA`, these appear to be local packages. Ensure they are correctly installed or available in your Python path.
+    For `chimera`, this appears to be a local package. Ensure it is correctly installed or available in your Python path.
+
+4.  **Install NaviCatGA:**
+    ```bash
+    pip install git+https://github.com/lcmd-epfl/NaviCatGA.git
+    ```
 
 4.  **Install `xtb`:**
     Follow the instructions on the `xtb` website to install it for your operating system and ensure it's available in your system's PATH.
