@@ -118,11 +118,24 @@ def main():
     #  n+=1
     # print("Total generations: ",n)
     for i in range(NUM_CYCLES):
-        print("CYCLE ", i)
+        print(f"\n--- CYCLE {i} ---")
         solver.solve(1)
-        print(
-            f"{solver.fitness_} is the current fitness. The next solve call should reuse it."
-        )
+        
+        # Log details for the current GA turn
+        current_max_fitness = solver.max_fitness_[-1]
+        current_mean_fitness = solver.mean_fitness_[-1]
+        
+        # Find the best individual in the current population
+        best_idx = np.argmax(solver.fitness_)
+        best_chromosome = solver.population_[best_idx]
+        best_smiles = chromosome_to_smiles_callable(best_chromosome)
+
+        print(f"Current fitness values: {solver.fitness_}")
+        print(f"Max fitness in this cycle: {current_max_fitness}")
+        print(f"Mean fitness in this cycle: {current_mean_fitness}")
+        print(f"Best individual (SMILES): {best_smiles}")
+        print(f"Best individual (chromosome): {best_chromosome}")
+
         solver.write_population()
         for j, k, chromosome in zip(
             solver.fitness_, solver.printable_fitness, solver.population_
