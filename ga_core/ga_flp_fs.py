@@ -33,7 +33,19 @@ from scipy.spatial import distance
 from skspatial.objects import Plane, Points
 
 
-frustration_predictor = FrustrationPredictor()
+frustration_predictor = None
+
+
+def initialize_frustration_predictor(model_path: str):
+    """
+    Initializes the global frustration predictor with a trained model.
+
+    Args:
+        model_path: The path to the saved classifier model.
+    """
+    global frustration_predictor
+    frustration_predictor = FrustrationPredictor(model_path)
+
 
 # Helper function
 
@@ -554,7 +566,7 @@ def get_frustration(B_index: int, N_index: int) -> float:
         The frustration score as a float, or 0.0 if the model is not loaded or
         prediction is skipped.
     """
-    if not frustration_predictor.model_loaded:
+    if frustration_predictor is None or not frustration_predictor.model_loaded:
         print("Warning: Frustration prediction is unavailable. Returning 0.0.")
         return 0.0
 
@@ -562,14 +574,14 @@ def get_frustration(B_index: int, N_index: int) -> float:
     if not os.path.exists(xyz_file):
         raise FileNotFoundError(f"XYZ file not found for frustration prediction: {xyz_file}")
 
-    start_time = timeit.default_timer()
+    # start_time = timeit.default_timer()
     try:
         result = frustration_predictor.predict_from_xyz(xyz_file, B_index, N_index)
     except Exception as e:
         raise RuntimeError(f"Frustration prediction failed with error: {e}") from e
-    finally:
-        execution_time = timeit.default_timer() - start_time
-        print(f"Frustration prediction executed in {execution_time:.4f} seconds.")
+    # finally:
+    #     execution_time = timeit.default_timer() - start_time
+    #     print(f"Frustration prediction executed in {execution_time:.4f} seconds.")
 
     return result
 

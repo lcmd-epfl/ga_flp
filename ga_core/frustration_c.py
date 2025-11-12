@@ -3,6 +3,7 @@
 import pickle
 import sys
 import logging
+import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,34 +26,26 @@ from sklearn.model_selection import (
 
 logger = logging.getLogger(__name__)
 
-# Sets the verbosity level for output messages. Higher values typically mean more verbose output.
-verb = 5
-# Flag to indicate whether the model should be re-trained (refitted) or not.
-refit = False
-# Flag to indicate whether cross-validation should be performed.
-crossvalidate = False
-# The filename for saving/loading the trained classifier model.
-filename = "classifier_trained.sav"
-
-# Model training and selection
-def train_and_evaluate_model(filename: str, verb: int, crossvalidate: bool):
+def train_and_evaluate_model(csv_path: str, model_save_path: str, verbosity: int, cross_validate: bool):
     """
     Trains and evaluates a machine learning model for frustration prediction.
 
-    This function loads data, splits it into training and testing sets,
+    This function loads data from a CSV file, splits it into training and testing sets,
     performs GridSearchCV to find the best estimator among SGDClassifier,
     LogisticRegression, and RandomForestClassifier, and then saves the best model.
-    Optionally performs cross-validation and displays classification reports and confusion matrices.
+    Optionally performs cross-validation and saves classification reports and confusion matrices plots.
 
     Args:
-        filename: The name of the file to save the trained model.
-        verb: Verbosity level for output messages.
-        crossvalidate: Flag to indicate whether cross-validation should be performed.
+        csv_path (str): The path to the input CSV file.
+        model_save_path (str): The path to save the trained model.
+        verbosity (int): Verbosity level for output messages.
+        cross_validate (bool): Flag to indicate whether cross-validation should be performed.
     """
-    # Convert to numpy arrays
-    df = pd.read_csv("selected_data_energies_distances.csv", index_col=0)
+    # Load data from the provided CSV file path
+    df = pd.read_csv(csv_path, index_col=0)
     logger.info(df.head())
 
+    # Convert to numpy arrays
     ndf = df.iloc[:, 13:].values
     X = ndf[:, :-1]
     y = ndf[:, -1]
@@ -61,91 +54,93 @@ def train_and_evaluate_model(filename: str, verb: int, crossvalidate: bool):
     logger.info(f"{X[0, :]}, {y[0]}")
     logger.info(f"{X[1, :]}, {y[1]}")
     acc_scorer = make_scorer(accuracy_score)
-    X, X_te, y, y_te = train_test_split(X, y, test_size=0.10)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 
     # To select the best approach
     curr_acc = 0
+    best_estimator = None
 
-    a = sgdlogreg(n_jobs=-1)
-    param_grid = {
+    # SGDClassifier
+    sgd = sgdlogreg(n_jobs=-1)
+    param_grid_sgd = {
         "loss": ["hinge", "log_loss", "modified_huber"],
         "shuffle": [True, False],
         "penalty": ["l2", "l1", "elasticnet"],
         "max_iter": [10000],
         "alpha": [0.0001, 0.0002, 0.001, 0.01],
     }
-    gsa = GridSearchCV(
-        estimator=a, param_grid=param_grid, scoring=acc_scorer, cv=10, verbose=0
+    gs_sgd = GridSearchCV(
+        estimator=sgd, param_grid=param_grid_sgd, scoring=acc_scorer, cv=10, verbose=0
     )
-    gsa.fit(X, y)
-    acc_a = gsa.best_estimator_.score(X_te, y_te)
-    logger.info(f"SGD linear model accuracy on test: {acc_a}")
-    if acc_a > curr_acc:
-        curr_acc = acc_a
-        c = gsa.best_estimator_
+    gs_sgd.fit(X_train, y_train)
+    acc_sgd = gs_sgd.best_estimator_.score(X_test, y_test)
+    logger.info(f"SGD linear model accuracy on test: {acc_sgd}")
+    if acc_sgd > curr_acc:
+        curr_acc = acc_sgd
+        best_estimator = gs_sgd.best_estimator_
 
-    b = logreg(n_jobs=-1, solver="saga")
-    param_grid = {
+    # Logistic Regression
+    log_reg = logreg(n_jobs=-1, solver="saga")
+    param_grid_logreg = {
         "penalty": ["l2"],
         "max_iter": [2000],
         "C": [0.001, 0.01, 0.1, 1, 10, 100, 1000],
     }
-    gsb = GridSearchCV(
-        estimator=b, param_grid=param_grid, scoring=acc_scorer, cv=10, verbose=0
+    gs_logreg = GridSearchCV(
+        estimator=log_reg, param_grid=param_grid_logreg, scoring=acc_scorer, cv=10, verbose=0
     )
-    gsb.fit(X, y)
-    acc_b = gsb.best_estimator_.score(X_te, y_te)
-    logger.info(f"Logreg accuracy on test: {acc_b}")
-    if acc_b > curr_acc:
-        curr_acc = acc_b
-        c = gsb.best_estimator_
+    gs_logreg.fit(X_train, y_train)
+    acc_logreg = gs_logreg.best_estimator_.score(X_test, y_test)
+    logger.info(f"Logreg accuracy on test: {acc_logreg}")
+    if acc_logreg > curr_acc:
+        curr_acc = acc_logreg
+        best_estimator = gs_logreg.best_estimator_
 
-    c = rf(n_jobs=-1)
-    param_grid = {
+    # Random Forest
+    rand_forest = rf(n_jobs=-1)
+    param_grid_rf = {
         "n_estimators": [50, 100, 200, 500],
-        "max_features": ["sqrt", 400, 600],
+        "max_features": ["sqrt", "log2"],
         "bootstrap": [True, False],
-        "max_samples": [None],
     }
-    gsc = GridSearchCV(
-        estimator=c, param_grid=param_grid, scoring=acc_scorer, cv=10, verbose=0
+    gs_rf = GridSearchCV(
+        estimator=rand_forest, param_grid=param_grid_rf, scoring=acc_scorer, cv=10, verbose=0
     )
-    gsc.fit(X, y)
-    acc_c = gsc.best_estimator_.score(X_te, y_te)
-    logger.info(f"RF accuracy on test: {acc_c}")
-    if acc_c > curr_acc:
-        curr_acc = acc_c
-        c = gsc.best_estimator_
-    pickle.dump(c, open(filename, "wb"))
+    gs_rf.fit(X_train, y_train)
+    acc_rf = gs_rf.best_estimator_.score(X_test, y_test)
+    logger.info(f"RF accuracy on test: {acc_rf}")
+    if acc_rf > curr_acc:
+        best_estimator = gs_rf.best_estimator_
 
-    # We select the best model, which is the random forest typically
-    logger.info(filename)
+    # Save the best model
+    pickle.dump(best_estimator, open(model_save_path, "wb"))
+    logger.info(f"Best model saved to {model_save_path}")
 
-    if crossvalidate:
+    if cross_validate:
         # Cross validation after reloading data
-        X = ndf[:, :-1]
-        y = ndf[:, -1]
         kf = KFold(n_splits=20)
-        y_pr = np.zeros_like(y)
-        for train, test in kf.split(X, y):
-            X_tr, X_te, y_tr, y_te = X[train], X[test], y[train], y[test]
-            c.fit(X_tr, y_tr)
-            y_pr[test] = c.predict(X_te)
+        y_pred = np.zeros_like(y)
+        for train_index, test_index in kf.split(X, y):
+            X_tr, X_te = X[train_index], X[test_index]
+            y_tr, y_te = y[train_index], y[test_index]
+            best_estimator.fit(X_tr, y_tr)
+            y_pred[test_index] = best_estimator.predict(X_te)
 
-        if verb > 0:
-            logger.info(
-                classification_report(
-                    y, y_pr, target_names=["Not frustrated", "Frustrated"]
-                )
+        if verbosity > 0:
+            report = classification_report(
+                y, y_pred, target_names=["Not frustrated", "Frustrated"]
             )
-        if verb > 1:
+            logger.info(report)
+            print(report)
+
+        if verbosity > 1:
             titles_options = [
-                ("Confusion matrix, without normalization", None),
-                ("Normalized confusion matrix", "true"),
+                ("Confusion matrix, without normalization", None, "confusion_matrix.png"),
+                ("Normalized confusion matrix", "true", "confusion_matrix_normalized.png"),
             ]
-            for title, normalize in titles_options:
+            for title, normalize, figname in titles_options:
                 disp = ConfusionMatrixDisplay.from_estimator(
-                    c,
+                    best_estimator,
                     X,
                     y,
                     display_labels=["Not frustrated", "Frustrated"],
@@ -153,7 +148,11 @@ def train_and_evaluate_model(filename: str, verb: int, crossvalidate: bool):
                     normalize=normalize,
                 )
                 disp.ax_.set_title(title)
-            plt.show()
+                plt.savefig(figname, dpi=300)
+                logger.info(f"Saved figure: {figname}")
+            plt.close('all')
+
+
 class FrustrationPredictor:
     """
     A class to predict molecular frustration using a pre-trained machine learning model.
@@ -179,7 +178,8 @@ class FrustrationPredictor:
         will be skipped.
         """
         try:
-            self.model = pickle.load(open(self.model_filename, "rb"))
+            with open(self.model_filename, "rb") as f:
+                self.model = pickle.load(f)
             self.model_loaded = True
             logger.info(f"Frustration model loaded successfully from {self.model_filename}.")
         except (FileNotFoundError, ValueError) as e:
@@ -192,9 +192,9 @@ class FrustrationPredictor:
         Predicts molecular frustration from an XYZ file using a pre-trained model.
 
         Args:
-            filename: The path to the XYZ file.
-            idx_b: The index of the boron atom.
-            idx_n: The index of the nitrogen atom.
+            filename (str): The path to the XYZ file.
+            idx_b (int): The index of the boron atom.
+            idx_n (int): The index of the nitrogen atom.
 
         Returns:
             The prediction of frustration (0 for not frustrated, 1 for frustrated) or None if the model is not loaded.
@@ -232,22 +232,50 @@ class FrustrationPredictor:
         frustrated = self.model.predict(repr.reshape(1, -1))
         return frustrated
 
-def run_frustration_prediction():
+def run_frustration_prediction(args):
     """
-    Runs the frustration prediction process.
-    Initializes the FrustrationPredictor, reads command-line arguments for
-    filename, boron index, and nitrogen index, then prints the prediction.
+    Runs the frustration prediction process for a single molecule.
+    
+    Args:
+        args: Command line arguments from argparse.
     """
-    predictor = FrustrationPredictor()
-    idx_b = int(sys.argv[2])
-    idx_n = int(sys.argv[3])
+    predictor = FrustrationPredictor(args.model)
     logger.info(
-        f"Filename is {sys.argv[1]}, boron index is {idx_b} and nitrogen index is {idx_n}."
+        f"Filename is {args.xyz_file}, boron index is {args.idx_b} and nitrogen index is {args.idx_n}."
     )
-    logger.info(f"Frustration is {predictor.predict_from_xyz(sys.argv[1], idx_b, idx_n)}.")
+    frustration = predictor.predict_from_xyz(args.xyz_file, args.idx_b, args.idx_n)
+    logger.info(f"Frustration is {frustration}.")
+    print(f"Predicted frustration: {frustration}")
 
+def main():
+    """Main function to handle command-line arguments and run the appropriate action."""
+    parser = argparse.ArgumentParser(description="Train a frustration prediction model or predict frustration for a molecule.")
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # Train command
+    train_parser = subparsers.add_parser('train', help='Train and evaluate a model.')
+    train_parser.add_argument('csv_path', type=str, help='Path to the training data CSV file.')
+    train_parser.add_argument('--model_save_path', type=str, default='classifier_trained.sav', help='Path to save the trained model.')
+    train_parser.add_argument('--verbosity', type=int, default=2, help='Verbosity level.')
+    train_parser.add_argument('--no-cross-validation', action='store_false', dest='cross_validate', help='Disable cross-validation.')
+
+    # Predict command
+    predict_parser = subparsers.add_parser('predict', help='Predict frustration for a single molecule.')
+    predict_parser.add_argument('xyz_file', type=str, help='Path to the XYZ file.')
+    predict_parser.add_argument('idx_b', type=int, help='Index of the boron atom.')
+    predict_parser.add_argument('idx_n', type=int, help='Index of the nitrogen atom.')
+    predict_parser.add_argument('--model', type=str, default='classifier_trained.sav', help='Path to the trained model file.')
+
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    if args.command == 'train':
+        train_and_evaluate_model(args.csv_path, args.model_save_path, args.verbosity, args.cross_validate)
+    elif args.command == 'predict':
+        run_frustration_prediction(args)
+    else:
+        parser.print_help()
 
 if __name__ == "__main__":
-    if refit:
-        train_and_evaluate_model(filename, verb, crossvalidate)
-    run_frustration_prediction()
+    main()

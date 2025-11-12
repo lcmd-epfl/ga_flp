@@ -16,6 +16,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 from ga_core.ga_flp import chromosome_to_smiles, overall_fitness_function
+from ga_core.ga_flp_fs import initialize_frustration_predictor
 
 # For multiobjective optimization we use chimera to scalarize
 chimera = Chimera(tolerances=[0.25, 0.1, 0.25], goals=["max", "max", "min"])
@@ -121,7 +122,11 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Run Genetic Algorithm for FLP optimization.")
     parser.add_argument("--config", type=str, default="config/config.json", help="Path to the configuration file.")
+    parser.add_argument("--model_path", type=str, default="models/classifier_trained.sav", help="Path to the trained classifier model.")
     args = parser.parse_args()
+
+    # Initialize the frustration predictor
+    initialize_frustration_predictor(args.model_path)
 
     # Load GA parameters from config file
     with open(args.config, 'r') as f:

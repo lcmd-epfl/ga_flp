@@ -21,16 +21,20 @@ from .ga_flp_fs import (
 
 def external_FLP(smiles_list: list[str], BB1: str, LBr1: str, LBr2: str) -> list[str]:
     """
-    Appends external FLP components to the SMILES list based on specific rules.
+    Appends external Frustrated Lewis Pair (FLP) components to a list of SMILES fragments
+    based on specific structural rules. This function handles cases where the Lewis base
+    fragments (LBr1, LBr2) might contain a wildcard '*' indicating a specific bonding
+    pattern, or appends standard nitrogen-based Lewis base components.
 
     Args:
-        smiles_list: The list of SMILES fragments to append to.
-        BB1: The main building block SMILES string.
-        LBr1: The first Lewis base fragment SMILES string.
-        LBr2: The second Lewis base fragment SMILES string.
+        smiles_list: A list of SMILES fragments to which the external FLP components
+                     will be appended. This list is modified in-place.
+        BB1: The SMILES string for the main building block.
+        LBr1: The SMILES string for the first Lewis base fragment.
+        LBr2: The SMILES string for the second Lewis base fragment.
 
     Returns:
-        The updated list of SMILES fragments.
+        The updated list of SMILES fragments, including the appended external FLP components.
     """
     smiles_list.append(BB1)
     LBr = [LBr1, LBr2]
@@ -50,13 +54,30 @@ def external_FLP(smiles_list: list[str], BB1: str, LBr1: str, LBr2: str) -> list
 
 def chromosome_to_smiles(chromosome: list[str]) -> str:
     """
-    Generates a SMILES string from a list of SMILES fragments (chromosome).
+    Generates a full SMILES string representing a molecule from a list of
+    SMILES fragments (chromosome). The chromosome is expected to contain
+    specific building blocks for Lewis acids (LAr), Lewis bases (LBr),
+    and a central building block (BB) with potential substituents (BBr).
+
+    The function handles different bonding patterns, including those with
+    wildcard '*' characters indicating specific attachment points, and
+    constructs the final SMILES string by concatenating these fragments
+    according to predefined rules.
 
     Args:
-        chromosome: A list of SMILES fragments representing the chromosome.
+        chromosome: A list of SMILES fragments, where each element corresponds
+                    to a specific part of the molecule:
+                    - chromosome[0]: LAr1 (Lewis Acid fragment 1)
+                    - chromosome[1]: LAr2 (Lewis Acid fragment 2)
+                    - chromosome[2]: LBr1 (Lewis Base fragment 1)
+                    - chromosome[3]: LBr2 (Lewis Base fragment 2)
+                    - chromosome[4]: BB1 (Central Building Block)
+                    - chromosome[5]: BBrA (Substituent for BB, position A)
+                    - chromosome[6]: BBrB (Substituent for BB, position B)
+                    - chromosome[7]: BBrC (Substituent for BB, position C)
 
     Returns:
-        A single SMILES string assembled from the chromosome.
+        A single SMILES string assembled from the chromosome fragments.
     """
     LAr1 = chromosome[0]
     LAr2 = chromosome[1]

@@ -68,7 +68,14 @@ The script will perform a series of GA cycles, optimizing the FLP structures.
     -   `ga_core/ga_flp.py`: Defines the `chromosome_to_smiles` and `overall_fitness_function` used by the GA.
     -   `ga_core/angle_measure.py`: Provides functions for calculating angles in molecular structures.
     -   `ga_core/ga_flp_fs.py`: Contains functions for molecular embedding, property calculations (B-N distance, HA, PA), and `xtb` optimizations.
-    -   `frustration_c.py`: Implements the `FrustrationPredictor` class for predicting molecular frustration using a pre-trained model.
+    -   `ga_core/frustration_c.py`: Implements the `FrustrationPredictor` class for predicting molecular frustration using a pre-trained model. See the "Data and Model" section for more details.
+
+## Data and Model
+
+This project includes a pre-trained model and the dataset used to train it.
+
+-   `models/classifier_trained.sav`: This is the pre-trained machine learning model (a scikit-learn classifier) used by the `FrustrationPredictor` for quick predictions of molecular frustration.
+-   `data/selected_data_energies_distances.csv`: This CSV file contains the dataset used to train the frustration prediction model. It includes various molecular properties and the "Frustrated" class label, which is used to train the classifier.
 
 ## Logging
 
