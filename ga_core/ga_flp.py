@@ -217,15 +217,30 @@ def fitness_function_12_v2(
 
 def overall_fitness_function(smiles: str) -> tuple[float, float, float]:
     """
-    Calculates the overall fitness of a SMILES string based on chemical distance,
-    geometric scores, and synthetic accessibility.
+    Calculates the overall fitness of a molecule, represented by a SMILES string,
+    by combining multiple chemical and geometric properties into three distinct scores.
+    This function serves as the primary objective function for the genetic algorithm.
+
+    The function first calls `fitness_function_12_v2` to obtain raw molecular
+    properties. It then combines these properties into three scores:
+    1.  **Chemical Score**: Based on the chemical distance (`dchem`), representing
+        the molecule's electronic properties.
+    2.  **Geometric Score**: A composite score derived from the Boron-Nitrogen
+        distance and a key molecular angle, adjusted by the frustration class.
+    3.  **Synthetic Accessibility Score**: An unmodified score indicating the
+        ease of synthesis.
+
+    Additionally, this function has a side effect of appending the raw and calculated
+    data for each molecule to a file named `raw_data.txt`.
 
     Args:
-        smiles: The SMILES string of the molecule.
+        smiles (str): The SMILES string of the molecule to be evaluated.
 
     Returns:
-        A tuple containing the chemical score, geometric score, and synthetic
-        accessibility score.
+        tuple[float, float, float]: A tuple containing the three calculated fitness scores:
+            - Chemical Score (float)
+            - Geometric Score (float)
+            - Synthetic Accessibility Score (float)
     """
     dchem, bn_distance, angle, fepa, feha, scs, fr = fitness_function_12_v2(smiles)
 

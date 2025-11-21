@@ -5,6 +5,8 @@ import sys
 import logging
 import argparse
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -31,23 +33,34 @@ def train_and_evaluate_model(csv_path: str, model_save_path: str, verbosity: int
     Trains and evaluates a machine learning model for frustration prediction.
 
     This function loads data from a CSV file, splits it into training and testing sets,
-    performs GridSearchCV to find the best estimator among SGDClassifier,
-    LogisticRegression, and RandomForestClassifier, and then saves the best model.
-    Optionally performs cross-validation and saves classification reports and confusion matrices plots.
+    and then uses GridSearchCV to find the best estimator among three different
+    classifier types:
+    - SGDClassifier (Stochastic Gradient Descent)
+    - LogisticRegression
+    - RandomForestClassifier
+
+    The best-performing model based on accuracy is saved to a file. The function
+    can also perform cross-validation and generate a classification report and
+    confusion matrix plots for a more detailed evaluation.
 
     Args:
-        csv_path (str): The path to the input CSV file.
-        model_save_path (str): The path to save the trained model.
-        verbosity (int): Verbosity level for output messages.
-        cross_validate (bool): Flag to indicate whether cross-validation should be performed.
+        csv_path (str): The path to the input CSV file containing the training data.
+        model_save_path (str): The path where the trained model will be saved.
+        verbosity (int): The verbosity level for logging and output messages.
+                         Higher values result in more detailed output.
+        cross_validate (bool): A flag to indicate whether to perform cross-validation
+                               after finding the best model.
     """
     # Load data from the provided CSV file path
     df = pd.read_csv(csv_path, index_col=0)
     logger.info(df.head())
 
+    # Set global font size for publication quality
+    plt.rcParams.update({'font.size': 12})
+
     # Convert to numpy arrays
-    ndf = df.iloc[:, 13:].values
-    X = ndf[:, :-1]
+    ndf = df.iloc[:, 2:].values
+    X = ndf[:, :-3]
     y = ndf[:, -1]
 
     # All formatted now, X contains the different buried volumes and y is 0 (not frustrated) and 1 (frustrated)
@@ -119,16 +132,49 @@ def train_and_evaluate_model(csv_path: str, model_save_path: str, verbosity: int
     if cross_validate:
         # Cross validation after reloading data
         kf = KFold(n_splits=20)
-        y_pred = np.zeros_like(y)
-        for train_index, test_index in kf.split(X, y):
+        y_pred_full = np.zeros_like(y)
+        for i, (train_index, test_index) in enumerate(kf.split(X, y)):
             X_tr, X_te = X[train_index], X[test_index]
             y_tr, y_te = y[train_index], y[test_index]
             best_estimator.fit(X_tr, y_tr)
-            y_pred[test_index] = best_estimator.predict(X_te)
+            y_pred = best_estimator.predict(X_te)
+            y_pred_full[test_index] = y_pred
+
+            if verbosity > 1:
+                # Plot confusion matrix for each fold
+                plt.figure(figsize=(8, 6))
+                disp = ConfusionMatrixDisplay.from_predictions(
+                    y_te,
+                    y_pred,
+                    display_labels=["Not frustrated", "Frustrated"],
+                    cmap=plt.cm.Blues,
+                    normalize=None,
+                )
+                disp.ax_.set_title(f"Fold {i+1} Confusion Matrix")
+                plt.tight_layout()
+                figname = f"confusion_matrix_fold_{i+1}.png"
+                plt.savefig(figname, dpi=300)
+                logger.info(f"Saved figure: {figname}")
+                plt.close()
+
+                plt.figure(figsize=(8, 6))
+                disp_norm = ConfusionMatrixDisplay.from_predictions(
+                    y_te,
+                    y_pred,
+                    display_labels=["Not frustrated", "Frustrated"],
+                    cmap=plt.cm.Blues,
+                    normalize="true",
+                )
+                disp_norm.ax_.set_title(f"Fold {i+1} Normalized Confusion Matrix")
+                plt.tight_layout()
+                figname_norm = f"confusion_matrix_normalized_fold_{i+1}.png"
+                plt.savefig(figname_norm, dpi=300)
+                logger.info(f"Saved figure: {figname_norm}")
+                plt.close()
 
         if verbosity > 0:
             report = classification_report(
-                y, y_pred, target_names=["Not frustrated", "Frustrated"]
+                y, y_pred_full, target_names=["Not frustrated", "Frustrated"]
             )
             logger.info(report)
             print(report)
@@ -139,15 +185,16 @@ def train_and_evaluate_model(csv_path: str, model_save_path: str, verbosity: int
                 ("Normalized confusion matrix", "true", "confusion_matrix_normalized.png"),
             ]
             for title, normalize, figname in titles_options:
-                disp = ConfusionMatrixDisplay.from_estimator(
-                    best_estimator,
-                    X,
+                plt.figure(figsize=(8, 6))
+                disp = ConfusionMatrixDisplay.from_predictions(
                     y,
+                    y_pred_full,
                     display_labels=["Not frustrated", "Frustrated"],
                     cmap=plt.cm.Blues,
                     normalize=normalize,
                 )
                 disp.ax_.set_title(title)
+                plt.tight_layout()
                 plt.savefig(figname, dpi=300)
                 logger.info(f"Saved figure: {figname}")
             plt.close('all')

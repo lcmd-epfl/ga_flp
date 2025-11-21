@@ -33,17 +33,28 @@ def angle_between(u: np.ndarray, v: np.ndarray) -> float:
     return np.arccos(np.clip(np.dot(v_1, u_1), -1.0, 1.0))
 
 
-def hh_min_rot(symbols, coords_list: np.ndarray, rotvec: np.ndarray) -> np.ndarray:
+def hh_min_rot(symbols: list, coords_list: np.ndarray, rotvec: np.ndarray) -> np.ndarray:
     """
-    Performs a rotation to minimize the HH distance.
+    Performs a rotation of a molecular fragment to minimize the distance between
+    two hydrogen atoms (H-H distance). This is typically used to optimize the
+    orientation of a substituent on a molecule.
+
+    The function identifies a "skeleton" and a "rotatable" fragment within the
+    provided coordinates. It then iteratively rotates the rotatable fragment
+    around a specified vector and calculates the H-H distance. The rotation that
+    results in the minimum H-H distance without causing atomic clashes is applied.
 
     Args:
-        symbols: List of atomic symbols (not directly used in this function but passed along).
-        coords_list: A numpy array of coordinates.
-        rotvec: The rotation vector.
+        symbols (list): List of atomic symbols. This argument is not directly used
+                        in the rotation but is maintained for compatibility with
+                        other functions.
+        coords_list (np.ndarray): A numpy array of atomic coordinates. The last two
+                                  atoms are assumed to be the hydrogen atoms of interest.
+        rotvec (np.ndarray): The rotation vector (axis) around which the fragment
+                             will be rotated.
 
     Returns:
-        A numpy array of the rotated coordinates.
+        np.ndarray: A numpy array of the new coordinates with the rotated fragment.
     """
     coords_list = np.array(coords_list)
     hhref = np.linalg.norm(coords_list[-1] - coords_list[-2])  # Must be the HH distance
