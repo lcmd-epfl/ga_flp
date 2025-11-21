@@ -76,6 +76,9 @@ This project includes a pre-trained model and the dataset used to train it.
 
 -   `models/classifier_trained.sav`: This is the pre-trained machine learning model (a scikit-learn classifier) used by the `FrustrationPredictor` for quick predictions of molecular frustration.
 -   `data/selected_data_energies_distances.csv`: This CSV file contains the dataset used to train the frustration prediction model. It includes various molecular properties and the "Frustrated" class label, which is used to train the classifier.
+-   `data/quenching/`: This directory contains the dataset for training the classifier quenching model.
+    -   `data/quenching/bvs_energies_distances.csv`: A CSV file with energies, distances, and other molecular descriptors for a set of molecules.
+    -   `data/quenching/xyz/`: A directory containing the corresponding molecular geometry `.xyz` files for the entries in the CSV.
 
 ## Logging
 
