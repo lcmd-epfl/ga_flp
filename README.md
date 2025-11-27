@@ -15,6 +15,10 @@ This project implements a Genetic Algorithm (GA) to optimize Frustrated Lewis Pa
     git clone https://github.com/lcmd-epfl/ga_flp
     conda create -n ga_flp python=3.9 # or your preferred Python version
     conda activate ga_flp
+
+    # Clone the SCScore repository
+    git clone https://github.com/connorcoley/scscore.git scscore
+
     pip install -r requirements.txt
 
     git clone https://github.com/lcmd-epfl/NaviCatGA/
@@ -23,6 +27,7 @@ This project implements a Genetic Algorithm (GA) to optimize Frustrated Lewis Pa
     python setup.py install
     cd ..
     rm -rf NaviCatGA
+
     
 ## Usage
 

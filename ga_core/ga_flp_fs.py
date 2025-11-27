@@ -14,6 +14,22 @@ or other high-throughput screening workflows for FLP catalyst design.
 
 import math
 import os
+import sys
+from pathlib import Path
+
+# Add scscore to sys.path
+FILE_PATH = Path(__file__).resolve()
+ROOT_DIR = FILE_PATH.parents[1]
+SCSCORE_DIR = ROOT_DIR / "scscore"
+if str(SCSCORE_DIR) not in sys.path:
+    sys.path.append(str(SCSCORE_DIR))
+
+try:
+    from scscore import standalone_model_numpy
+except ImportError:
+    print("Warning: Could not import scscore. sa_score will return 0.0.")
+    standalone_model_numpy = None
+
 import re
 import subprocess as sp
 import timeit
@@ -537,13 +553,12 @@ def del_substrate(
     return mol_flp_s
 
 
+sc_scorer_model = None
+
+
 def sa_score(smiles: str) -> float:
     """
     Calculates the synthetic accessibility (SA) score for a given SMILES string.
-
-    .. note::
-        This function is currently mocked to return 0.0, because the required
-        `standalone_model_numpy.py` file is not available.
 
     Args:
         smiles: The SMILES string of the molecule.
@@ -551,7 +566,25 @@ def sa_score(smiles: str) -> float:
     Returns:
         The synthetic accessibility score as a float.
     """
-    return 0.0
+    global sc_scorer_model
+    if standalone_model_numpy is None:
+        return 0.0
+
+    if sc_scorer_model is None:
+        try:
+            sc_scorer_model = standalone_model_numpy.SCScorer()
+            model_path = SCSCORE_DIR / "models" / "full_reaxys_model_1024bool" / "model.ckpt-10654.as_numpy.json.gz"
+            sc_scorer_model.restore(str(model_path))
+        except Exception as e:
+            print(f"Error loading SCScore model: {e}")
+            return 0.0
+
+    try:
+        _, score = sc_scorer_model.get_score_from_smi(smiles)
+        return float(score)
+    except Exception as e:
+        print(f"Error calculating SA score: {e}")
+        return 0.0
 
 
 def get_frustration(B_index: int, N_index: int) -> float:

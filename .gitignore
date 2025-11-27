@@ -13,3 +13,5 @@ charges
 *out
 NOT_CONVERGED
 gen*/
+
+*.pyc
