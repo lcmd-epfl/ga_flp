@@ -1,5 +1,5 @@
 # Genetic Algorithm for Frustrated Lewis Pairs (GA-FLP)
-
+[![arXiv](https://img.shields.io/badge/PDF-arXiv-blue)](https://chemrxiv.org/engage/chemrxiv/article-details/6929e1d5a10c9f5ca13bb7a4)
 ## Project Description
 This project implements a Genetic Algorithm (GA) to optimize Frustrated Lewis Pairs (FLPs) for chemical applications. It leverages computational chemistry tools like RDKit and xtb for molecular property calculations and a pre-trained model for frustration prediction. The GA explores a chemical space defined by SMILES strings to discover novel FLP structures with desired characteristics.
 
@@ -84,6 +84,7 @@ This project includes a pre-trained model and the dataset used to train it.
 -   `data/quenching/`: This directory contains the dataset for training the classifier quenching model.
     -   `data/quenching/bvs_energies_distances.csv`: A CSV file with energies, distances, and other molecular descriptors for a set of molecules.
     -   `data/quenching/xyz/`: A directory containing the corresponding molecular geometry `.xyz` files for the entries in the CSV.
+-  `xyzs-chtf-profs.zip`: Bundle of .xyz files containing optimized geometries of intermediates (I1, I2, I3, I4) and transition states (TS1, TS2) along the catalytic CO$_2$ hydrogenation free-energy profiles of the IFLP catalysts discussed in the manuscript.
 
 ## Logging
 
@@ -102,4 +103,4 @@ The `launcher.py` script uses Python's `logging` module with colored output for 
 
 If you use this code in your research, please cite the following publication:
 
-    Coming soon...
+    Das S, Laplaza R, Worakul T, Corminboeuf C. Inverse Design of Frustrated Lewis Pairs for Direct Catalytic CO2 Hydrogenation: Refining and Expanding Design Rules. ChemRxiv. 2025; doi:10.26434/chemrxiv-2025-439dn 
